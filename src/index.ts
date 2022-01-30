@@ -15,10 +15,10 @@ export function _theNext<T extends null, R>(
   index: number = 0
 ): R {
   try {
-    const context = Object.create(state);
+    const context = Object.create(state) as T;
     contextStack.push(context);
     return middleware[index]?.(() => {
-      return _theNext(middleware, context, context, index + 1);
+      return _theNext(middleware, context, contextStack, index + 1);
     });
   } finally {
     contextStack.pop();
@@ -48,7 +48,7 @@ export function _createPortal<D, K extends TKeyType = symbol>(
 }
 
 export function ringCompose<R>(_middleware: TMiddleWare<R>[]) {
-  const contextStack:Record<TKeyType,unknown>[] = [];
+  const contextStack: Record<TKeyType, unknown>[] = [];
 
   function getCurrentContext() {
     return contextStack[contextStack.length - 1];
@@ -64,8 +64,8 @@ export function ringCompose<R>(_middleware: TMiddleWare<R>[]) {
     return ctx[key] as T;
   }
 
-  function ring(middleware?:TMiddleWare<R>[]) {
-    return _theNext(middleware??_middleware, null, contextStack);
+  function ring(middleware?: TMiddleWare<R>[]) {
+    return _theNext(middleware ?? _middleware, null, contextStack);
   }
 
   function createPortal<D, K extends TKeyType = symbol>(key?: K): IPortal<D> {
@@ -78,4 +78,4 @@ export function ringCompose<R>(_middleware: TMiddleWare<R>[]) {
   };
 }
 
-export const onionRing =  ringCompose([])
+export const onionRing = ringCompose([]);
