@@ -8,8 +8,8 @@ export interface IPortal<D> {
   key: TKeyType;
 }
 
-export function _theNext<T extends Record<TKeyType, unknown>, R>(
-  middleware: TMiddleWare<R>[],
+export function _exec<T extends Record<string, unknown>, R>(
+  fn: () => R,
   state: T,
   contextStack: unknown[],
   index: number = 0
@@ -17,9 +17,8 @@ export function _theNext<T extends Record<TKeyType, unknown>, R>(
   try {
     const context = Object.create(state) as T;
     contextStack.push(context);
-    return middleware[index]?.(() => {
-      return _theNext(middleware, context, contextStack, index + 1);
-    });
+
+    return fn();
   } finally {
     contextStack.pop();
   }
@@ -47,7 +46,7 @@ export function _createPortal<D, K extends TKeyType = symbol>(
   };
 }
 
-export function ringCompose<R>() {
+export function portalCompose() {
   const contextStack: Record<TKeyType, unknown>[] = [];
 
   function getCurrentContext() {
@@ -64,8 +63,8 @@ export function ringCompose<R>() {
     return ctx[key] as T;
   }
 
-  function ring(middleware: TMiddleWare<R>[]) {
-    return _theNext(middleware, getCurrentContext() ?? null, contextStack);
+  function exec<R>(fn: () => R): R {
+    return _exec(fn, getCurrentContext(), contextStack);
   }
 
   function createPortal<D, K extends TKeyType = symbol>(key?: K): IPortal<D> {
@@ -74,8 +73,8 @@ export function ringCompose<R>() {
 
   return {
     createPortal,
-    ring,
+    exec,
   };
 }
 
-export const onionRing = ringCompose();
+export const onionRing = portalCompose();
